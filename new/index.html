@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASMP Real-Time State Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Status badge color classes */
+    .status-active { background-color: #14532d; color: #86efac; }
+    .status-idle { background-color: #1e3a8a; color: #93c5fd; }
+    .status-error { background-color: #7f1d1d; color: #fca5a5; }
+    .status-disconnected { background-color: #4b5563; color: #d1d5db; }
+    .status-pending { background-color: #92400e; color: #fde68a; }
+  </style>
+</head>
+<body class="bg-[#0d1117] text-gray-100 font-sans min-h-screen">
+
+  <div class="container mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="bg-[#161b22] rounded-2xl shadow-md p-6 mb-6">
+      <h1 class="text-3xl font-bold text-blue-400 mb-2">ASMP Real-Time State Monitor</h1>
+      <p class="text-gray-400 text-sm">
+        Authenticated State-Aware Messaging Protocol Dashboard. Tracks cryptographic integrity, message sequencing, and device health in real-time.
+      </p>
+    </div>
+
+    <!-- Connection Status Banner -->
+    <div id="connectionStatus"
+         class="text-center font-semibold py-3 mb-6 rounded-2xl bg-yellow-900 text-yellow-300 transition-all duration-500">
+      CONNECTING TO SERVER...
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-[#161b22] rounded-2xl shadow-md overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700 text-sm">
+        <thead class="bg-[#1c2128] text-gray-300 uppercase text-xs tracking-wider">
+          <tr>
+            <th class="px-4 py-3 text-left">Device ID</th>
+            <th class="px-4 py-3 text-left">State</th>
+            <th class="px-4 py-3 text-left">Last Message ID</th>
+            <th class="px-4 py-3 text-left">Last Seen</th>
+            <th class="px-4 py-3 text-left">Last Data Payload</th>
+          </tr>
+        </thead>
+        <tbody id="sessionTableBody" class="divide-y divide-gray-800">
+          <tr>
+            <td colspan="5" class="p-6 text-center text-gray-500">
+              Waiting for ASMP state updates...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WebSocket Real-Time Update Script -->
+  <script>
+    const tableBody = document.getElementById('sessionTableBody');
+    const connectionStatus = document.getElementById('connectionStatus');
+
+    const websocketUrl = `ws://${window.location.hostname}:8081`;
+    let ws;
+
+    function connectWebSocket() {
+      ws = new WebSocket(websocketUrl);
+
+      ws.onopen = () => {
+        connectionStatus.textContent = 'CONNECTED (Real-Time Updates Active)';
+        connectionStatus.classList.remove('bg-yellow-900', 'bg-red-900');
+        connectionStatus.classList.add('bg-green-900', 'text-green-300');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const sessions = JSON.parse(event.data);
+          updateDashboard(sessions);
+        } catch (e) {
+          console.error("Failed to parse session data:", e);
+        }
+      };
+
+      ws.onclose = () => {
+        connectionStatus.textContent = 'DISCONNECTED. Retrying in 3 seconds...';
+        connectionStatus.classList.remove('bg-green-900', 'bg-red-900');
+        connectionStatus.classList.add('bg-yellow-900', 'text-yellow-300');
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        connectionStatus.textContent = 'ERROR. Check console and server.';
+        connectionStatus.classList.remove('bg-green-900', 'bg-yellow-900');
+        connectionStatus.classList.add('bg-red-900', 'text-red-300');
+        ws.close();
+      };
+    }
+
+    function formatLastSeen(timestamp) {
+      const now = Date.now() / 1000;
+      const elapsed = Math.floor(now - timestamp);
+      if (elapsed < 60) return `${elapsed}s ago`;
+      if (elapsed < 3600) return `${Math.floor(elapsed / 60)}m ${elapsed % 60}s ago`;
+      return new Date(timestamp * 1000).toLocaleTimeString();
+    }
+
+    function updateDashboard(sessions) {
+      tableBody.innerHTML = '';
+      if (!Array.isArray(sessions) || sessions.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-6 text-center text-gray-500">
+              No active devices detected. Start the ASMP server and clients.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      sessions.forEach(session => {
+        const statusClass = `status-${(session.state || 'unknown').toLowerCase().replace(/ /g, '_')}`;
+        let lastDataString = JSON.stringify(session.last_data || session.last_data_payload || {}, null, 2);
+        if (lastDataString.length > 120) lastDataString = lastDataString.substring(0, 117) + '...';
+
+        const row = document.createElement('tr');
+        row.classList.add('hover:bg-[#21262d]');
+        row.innerHTML = `
+          <td class="px-4 py-3 font-mono text-gray-300">${session.device_id || '-'}</td>
+          <td class="px-4 py-3">
+            <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">
+              ${session.state || 'Unknown'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-300">${session.last_message_id || '-'}</td>
+          <td class="px-4 py-3 text-gray-400">${session.last_seen ? formatLastSeen(session.last_seen) : '-'}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-500">
+            <pre class="whitespace-pre-wrap">${lastDataString}</pre>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Start connection on page load
+    connectWebSocket();
+  </script>
+
+</body>
+</html>

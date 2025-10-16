@@ -1,0 +1,14 @@
+{
+    "db412716-664f-4ad4-95b5-7fdf0f9a397f": {
+        "device_id": "DEVICE-001",
+        "addr": [
+            "172.16.71.181",
+            62704
+        ],
+        "state": "DISCONNECTED",
+        "last_message_id": 1,
+        "last_seen": 1760525925.5068257,
+        "last_payload": "{\"temperature\": 20.28, \"humidity\": 47.17}",
+        "is_trained": false
+    }
+}
