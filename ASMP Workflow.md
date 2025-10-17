@@ -28,7 +28,9 @@ The client application starts on the IoT device.
 
 It retrieves its secret identity by loading its unique private key from its .pem file into memory.
 
-Phase 2: The Zero-Trust Handshake (Prove Your Identity)
+Phase 2: 
+
+The Zero-Trust Handshake (Prove Your Identity)
 This phase embodies the "zero-trust" principle. The server does not trust any device by default and forces the client to prove its identity before granting access.
 
 Connection & Challenge: The client connects to the server's IP address and port. To prove it is not an imposter, the client generates a random, one-time-use string (a "nonce").
@@ -47,7 +49,9 @@ If the signature is valid, the server has mathematical proof of the device's ide
 
 If the signature is invalid, the server immediately terminates the connection. An imposter attack is blocked.
 
-Phase 3: The Secure Message Lifecycle (The Promise)
+Phase 3: 
+
+The Secure Message Lifecycle (The Promise)
 Once trust is established, every message sent must uphold that trust. This phase ensures every piece of data is individually secured.
 
 Data Creation & Confidentiality: The client reads its sensor data (e.g., {"temperature": 25.0}). To ensure privacy from outsiders, it uses the shared AES key to encrypt this payload into unreadable ciphertext.
@@ -56,7 +60,9 @@ Signing (The Tamper-Proof Seal): The client assembles the full message frame, in
 
 Transmission: The client sends the complete, verifiable package—the signed and encrypted message—to the server over the network.
 
-Phase 4: Server-Side Verification (The Defense-in-Depth)
+Phase 4: 
+
+Server-Side Verification (The Defense-in-Depth)
 This is where the multi-layered defense of ASMP comes into play. For every single message, the server performs the following checks in order:
 
 Cryptographic Verification:
@@ -69,7 +75,9 @@ Decryption: Only after the message is proven to be authentic does the server use
 
 AI Anomaly Detection (The Final Layer):
 
-Training: If the AI is not yet trained for this device, it stores the trusted data. After 10 samples, it builds a statistical model of the device's "normal" behavior.
+Training: 
+
+If the AI is not yet trained for this device, it stores the trusted data. After 10 samples, it builds a statistical model of the device's "normal" behavior.
 
 Active Defense: If the AI is trained, it analyzes the decrypted data. It checks if the new data is a statistical anomaly (e.g., a temperature of 27.0 when the normal is 25.0 ± 0.1). If it is, the server knows this is a potential insider attack. A smart attacker is blocked.
 
