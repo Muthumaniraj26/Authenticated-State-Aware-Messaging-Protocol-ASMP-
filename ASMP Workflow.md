@@ -1,4 +1,4 @@
-ASMP Workflow Roadmap: A Top-to-End Explanation
+#ASMP Workflow Roadmap: A Top-to-End Explanation
 This document provides a complete roadmap of how the Authenticated State-Aware Messaging Protocol (ASMP) works, from the initial connection to the final, AI-powered security checks.
 
 Phase 1: Foundation & Identity Provisioning (Before Connection)
